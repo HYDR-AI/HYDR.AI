@@ -2,3 +2,4 @@ data/*
 .env
 venv/
 OAI_CONFIG_LIST
+.cache/*
