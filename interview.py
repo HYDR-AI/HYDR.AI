@@ -1,5 +1,4 @@
 import autogen
-import time
 
 class ProductInterview:
     def __init__(self, age, income, products_to_test):
@@ -58,17 +57,8 @@ class ProductInterview:
         for product in self.products_to_test:
             self.interview_manager.initiate_chat(self.interviewee, message=product, max_turns=12)
 
-<<<<<<< Updated upstream
     def get_conversation_logs(self):
         return self.interview_chat.messages
-=======
-def initiate_interview(data=None):
-    time.sleep(5)
-
-
-    for product in products_to_test:
-        interview_manager.initiate_chat(interviewee, message=product, max_turns=12)
->>>>>>> Stashed changes
 
 if __name__ == "__main__":
     products = [
