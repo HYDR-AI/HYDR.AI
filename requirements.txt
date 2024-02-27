@@ -1,2 +1,4 @@
 streamlit
 pyautogen
+flask
+flask-cors

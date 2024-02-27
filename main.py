@@ -1,6 +1,11 @@
 import streamlit as st
 import requests
 from requests.exceptions import RequestException
+<<<<<<< Updated upstream
+=======
+from interview.py import initiate_interview 
+
+>>>>>>> Stashed changes
 
 # Apply the custom theme
 st.set_page_config(page_title="HYDR.AI", layout="wide", page_icon="assets/logo.png")
@@ -76,30 +81,34 @@ def input_form():
     attachments = st.file_uploader("Attachments", type=["pdf", "doc", "docx", "txt"])
 
     # Specify the API endpoint
-    api_endpoint = "http://localhost:8000/api"
+    api_endpoint = 'https://localhost:5000/api/helloworld'
+    headers = {
+        'Authorization': 'Bearer MySecureApiKey1234'
+    }
 
     # Send POST request to the API
 
     if st.button("Submit"):
 
-        # Prepare the data payload
+       
         data_payload = {
-            "campaign_description": campaign_description,
-            "age": age,
-            "income": income,
-            "other_attributes": other_attributes,
-            "number_of_agents": number_of_agents,
-            # Add other fields as necessary
+            "message": "Hello from Streamlit!"  # Example message
         }
 
         # Send POST request to the API
+<<<<<<< Updated upstream
         response = requests.post(api_endpoint, json=data_payload)
 
         # Check if the request was successful
+=======
+        # Use try-except block around the request to handle potential errors better
+>>>>>>> Stashed changes
         try:
-            response = requests.post(api_endpoint, json=data_payload)
+            response = requests.post(api_endpoint, json=data_payload) #, headers=headers)
+            
             if response.status_code == 200:
                 st.success("Data successfully submitted to the API.")
+<<<<<<< Updated upstream
                 st.session_state["current_page"] = (
                     "Output Results"  # Note: this won't update the sidebar selectbox
                 )
@@ -112,10 +121,26 @@ def input_form():
         except RequestException as e:
             st.error(f"Failed to connect to the API: {e}")
 
+=======
+                response_data = response.json()  # Assuming your API returns some response in JSON format
+                st.write(response_data)  # Display the response data to the user
+                # st.session_state['current_page'] = 'Output Results'  # Navigate to output results
+            else:
+                st.error(f"Failed to submit data to the API. Status code: {response.status_code}")
+        except RequestException as e:
+            st.error(f"Failed to connect to the API: {e}")
+
+        
+
+        
+
+
+>>>>>>> Stashed changes
 
 def output_results():
     st.title("Analytics Output")
     col1, col2, col3 = st.columns(3)
+    row1, row2 = st.columns(2)
 
     with col1:
         st.header("Encuestas respuestas")
