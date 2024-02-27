@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 from requests.exceptions import RequestException
-from interview import initiate_interview
+from interview import ProductInterview
 
 # Apply the custom theme
 st.set_page_config(page_title="HYDR.AI", layout="wide", page_icon = "assets/logo.png")
@@ -70,21 +70,19 @@ def input_form():
 
     if st.button("Submit"):
 
-       
-        data_payload = {
-            "age": age,
-            "income": income,
-            "other_attributes": other_attributes,
-            "number_of_agents": number_of_agents,
-            "attachments": attachments,
-        }
-
     
         # Instead of sending a POST request, we call initiate_interview()
         with st.spinner('Please wait... Interview in progress'):
             try:
                 # Adjust the call to initiate_interview if it's supposed to take parameters
-                output = initiate_interview(data=data_payload)
+                        
+                products = [
+                    "Give your opinion about coca colas with strawberry flavour.",
+                    "Give your opinion about the new apple vision pro",
+                ]
+                        
+                interview = ProductInterview(age=age, income=income, products_to_test=products)
+
                 st.success("Interview completed successfully.")
                 # Process the output as needed, for example:
                 # st.write(output)
