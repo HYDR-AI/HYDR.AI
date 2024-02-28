@@ -51,7 +51,7 @@ def intro():
 
     col1, col2, col3 = st.columns([2.6,1,2])  # Adjust the ratio as needed for better centering
     with col2:  # This puts the button in the center column
-        st.write('<br><br>', unsafe_allow_html=True)  # Add more <br> tags to move the button further down
+        st.write('<br style="line-height: 6;">', unsafe_allow_html=True)
         if st.button("Input Form"):
             st.session_state['current_page'] = INPUT_FORM
             st.session_state['page_history'].append(INPUT_FORM)
