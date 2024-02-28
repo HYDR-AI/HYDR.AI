@@ -4,7 +4,7 @@ import autogen
 import requests
 
 import openai
-from population import Population
+# from population import Population
 
 from survey import Survey
 from dotenv import load_dotenv

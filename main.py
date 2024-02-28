@@ -1,5 +1,7 @@
 import streamlit as st
-from interview import ProductInterview  # Ensure this is a valid import in your project
+# from interview import ProductInterview  # Ensure this is a valid import in your project
+# from interview import InterviewV2
+from population import Population
 from assets.homepage import homepage_html  # Ensure this is a valid import in your project
 
 # Constants for easier maintenance and updates
@@ -77,8 +79,9 @@ def input_form():
         list_of_questions = st.text_area("Lista de preguntas. (Opcional)", height=100)
 
         st.header("Información sobre el grupo a testar")
-        age = st.slider("Edad", min_value=18, max_value=100, value=30, step=1)
+        age = st.slider("Edad", min_value=18, max_value=100, value=(30,40), step=1)
         income = st.slider("Income", min_value=0, max_value=100000, value=50000, step=1000)
+        gender_distribution = st.slider("% Male", min_value=0, max_value=1, value=50, step=1)
         other_attributes = st.text_input("Other attributes")
         number_of_agents = st.number_input(
             "Number of agents", min_value=1, max_value=100, value=1
@@ -94,8 +97,8 @@ def input_form():
                         "Give your opinion about coca colas with strawberry flavour.",
                         "Give your opinion about the new apple vision pro",
                     ]
-                            
-                    interview = ProductInterview(age=age, income=income, products_to_test=products)
+                    my_population = Population((age[0],age[1]), (income[0],income[1]), gender_distribution, other_attributes, number_of_agents)
+                    my_population.create_population()
 
                     st.success("Interview completed successfully.")
                     # Wait 2 seconds to simulate a process
