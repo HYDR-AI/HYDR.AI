@@ -23,7 +23,7 @@ class Survey:
         survey_responses (list): List of strings describing the survey responses.
     """
     
-    def __init__(self, assets, campaign_description, target_audience:Population, campaign_intent=None, survey_questions=[]):
+    def __init__(self, assets, campaign_description, target_audience:Population, campaign_intent=None, survey_questions=[], number_questions=10):
         """
         Constructs all the necessary attributes for the survey object.
         
@@ -38,8 +38,10 @@ class Survey:
         self.campaign_description = campaign_description
         self.campaign_intent = campaign_intent
         self.target_audience = target_audience
-        self.survey_questions = self.create_survey()
+        
         self.survey_responses = []  # Initialize as empty; will be filled out by responses
+        self.number_questions = number_questions
+        self.survey_questions = self.create_survey()
     
     def create_survey(self):
         """
@@ -48,8 +50,9 @@ class Survey:
         """
         # Use Gpt3.5 if there are no assets
         model = "gpt-3.5-turbo" if not self.assets else "gpt-4-vision-preview"
+        print(f"[DEBUG] Using model: {model}")
         system_prompt = f"""
-        Please create a list of 10 questions to be given to respondants to assess how suitable an ad 
+        Please create a list of {self.number_questions} questions to be given to respondants to assess how suitable an ad 
         campaign or product is. We will give you info about the campaign, as the description and if 
         needed images, as well as a description of the population and the intent. Only create questions 
         about the images and their content if provided amongst this text.
@@ -62,11 +65,12 @@ class Survey:
         """
         try:
             content = [{"type": "text", "text": system_prompt}]
-            for asset in self.assets:
-                content.append({
-                    "type": "image_url",
-                    "image_url": f"data:image/jpeg;base64,{asset}"
-                })
+            if self.assets:
+                for asset in self.assets:
+                    content.append({
+                        "type": "image_url",
+                        "image_url": f"data:image/jpeg;base64,{asset}"
+                    })
             messages = [{"role": "system", "content": content}]
             response = client.chat.completions.create(model=model, messages=messages, max_tokens=1000)
         except Exception as e:

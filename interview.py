@@ -1,65 +1,65 @@
 import json
-import random
-import autogen
-import requests
+# import random
+# import autogen
+# import requests
 
 import openai
-# from population import Population
+from population import Population
 
 from survey import Survey
 from dotenv import load_dotenv
 load_dotenv()
 
 client = openai.Client()
-class ProductInterview:
-    def __init__(self, age, income, products_to_test):
-        self.age = age
-        self.income = income
-        self.products_to_test = products_to_test
-        self.config_list = autogen.config_list_from_json(env_or_file="OAI_CONFIG_LIST")
-        self.llm_config = {"config_list": self.config_list}
-        self.interviewer = None
-        self.interviewee = None
-        self.interview_chat = None
-        self.interview_manager = None
-        self.setup_interview_environment()
+# class ProductInterview:
+#     def __init__(self, age, income, products_to_test):
+#         self.age = age
+#         self.income = income
+#         self.products_to_test = products_to_test
+#         self.config_list = autogen.config_list_from_json(env_or_file="OAI_CONFIG_LIST")
+#         self.llm_config = {"config_list": self.config_list}
+#         self.interviewer = None
+#         self.interviewee = None
+#         self.interview_chat = None
+#         self.interview_manager = None
+#         self.setup_interview_environment()
 
-    def setup_interview_environment(self):
-        self.interviewer = autogen.AssistantAgent(
-            name="Interviewer",
-            system_message="You ask follow-up questions based on the interviewee responses and personal opinions for the product.",
-            llm_config=self.llm_config,
-            code_execution_config=False,
-        )
-        self.interviewee = autogen.AssistantAgent(
-            name="Interviewee",
-            system_message="You are a person that came to test a product and give your personal opinion about it.",
-            llm_config=self.llm_config,
-            code_execution_config=False,
-        )
-        self.interview_chat = autogen.GroupChat(
-            agents=[self.interviewer, self.interviewee],
-            messages=[],
-            speaker_selection_method="round_robin",
-            allow_repeat_speaker=False,
-            max_round=10,
-        )
-        self.interview_manager = autogen.GroupChatManager(
-            groupchat=self.interview_chat,
-            code_execution_config={
-                "work_dir": "interview",
-                "use_docker": False,
-            },
-            is_termination_msg=lambda x: x.get("content", "").find("TERMINATE") >= 0,
-            llm_config=self.llm_config,
-        )
+#     def setup_interview_environment(self):
+#         self.interviewer = autogen.AssistantAgent(
+#             name="Interviewer",
+#             system_message="You ask follow-up questions based on the interviewee responses and personal opinions for the product.",
+#             llm_config=self.llm_config,
+#             code_execution_config=False,
+#         )
+#         self.interviewee = autogen.AssistantAgent(
+#             name="Interviewee",
+#             system_message="You are a person that came to test a product and give your personal opinion about it.",
+#             llm_config=self.llm_config,
+#             code_execution_config=False,
+#         )
+#         self.interview_chat = autogen.GroupChat(
+#             agents=[self.interviewer, self.interviewee],
+#             messages=[],
+#             speaker_selection_method="round_robin",
+#             allow_repeat_speaker=False,
+#             max_round=10,
+#         )
+#         self.interview_manager = autogen.GroupChatManager(
+#             groupchat=self.interview_chat,
+#             code_execution_config={
+#                 "work_dir": "interview",
+#                 "use_docker": False,
+#             },
+#             is_termination_msg=lambda x: x.get("content", "").find("TERMINATE") >= 0,
+#             llm_config=self.llm_config,
+#         )
 
-    def initiate_interview(self):
-        for product in self.products_to_test:
-            self.interview_manager.initiate_chat(self.interviewee, message=product, max_turns=12)
+#     def initiate_interview(self):
+#         for product in self.products_to_test:
+#             self.interview_manager.initiate_chat(self.interviewee, message=product, max_turns=12)
 
-    def get_conversation_logs(self):
-        return self.interview_chat.messages
+#     def get_conversation_logs(self):
+#         return self.interview_chat.messages
 
 class InterviewV2:
     def __init__(self, survey:Survey):
@@ -98,11 +98,12 @@ class InterviewV2:
             """
             try:
                 content = [{"type": "text", "text": system_prompt}]
-                for asset in self.survey.assets:
-                    content.append({
-                        "type": "image_url",
-                        "image_url": f"data:image/jpeg;base64,{self.survey.asset}"
-                    })
+                if self.survey.assets:
+                    for asset in self.survey.assets:
+                        content.append({
+                            "type": "image_url",
+                            "image_url": f"data:image/jpeg;base64,{self.survey.asset}"
+                        })
                 messages = [{"role": "system", "content": content}]
                 response = client.chat.completions.create(model=model, messages=messages, max_tokens=1000)
                 print(f"Question: {question}")
