@@ -1,4 +1,3 @@
-
 import random
 from dotenv import load_dotenv
 load_dotenv()
@@ -54,6 +53,7 @@ class Population:
         Generates the population based on the initialized attributes.
         Each individual is randomly assigned attributes from the provided lists and added to the population.
         """
+        print(f"[DEBUG] Creating population")
         for _ in range(self.population_size):
             age = random.choice(self.ages)
             income = random.choice(self.incomes)
@@ -160,6 +160,7 @@ class Population:
         population = {
             "ages": self.ages,
             "incomes": self.incomes,
+        }
             
             
 

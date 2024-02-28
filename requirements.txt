@@ -2,3 +2,7 @@ streamlit
 pyautogen
 flask
 flask-cors
+requests
+numpy
+matplotlib
+seaborn
