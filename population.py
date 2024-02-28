@@ -6,7 +6,6 @@ load_dotenv()
 from openai import OpenAI
 client = OpenAI()
 
-
 class Population:
     """
     A class to represent a population group.
@@ -19,11 +18,13 @@ class Population:
         locations (list of str): List of locations from where the individuals are.
         population_size (int): Number of individuals in the population.
         individuals (list): Container for storing individual profiles.
-
+        population_description (str): Description of the population.
     Methods:
         create_population(): Creates a population based on the specified attributes.
         create_individual(age, income, gender, interests, location): Creates and returns a dictionary representing an individual.
+        create_population_description(): Creates a description of the population.
         get_population(): Returns the list of individuals in the population.
+        get_population_description(): Returns the description of the population.
     """
 
     def __init__(self, ages: list, incomes: list, gender_distribution: int, interests: list, locations: list, population_size: int):
@@ -45,7 +46,8 @@ class Population:
         self.locations = locations
         self.population_size = population_size
         self.individuals = []
-        self.create_population()
+        self.create_population() # Populate the individuals list
+        self.population_description = self.create_population_description()
 
     def create_population(self):
         """
@@ -113,6 +115,46 @@ class Population:
             list: The list of individual dictionaries.
         """
         return self.individuals
+    def get_population_description(self):
+        """
+        Returns the description of the population.
+
+        Returns:
+            str: The description of the population.
+        """
+        return self.population_description
+    def create_population_description(self):
+        """
+        Creates a description of the population based on the initialized attributes.
+        """
+        system_prompt = f"""
+            Make a 50-word description of a focus group based on the statistics provided. 
+            The focus group consists of individuals with the following characteristics: 
+            ages ranging from {min(self.ages)} to {max(self.ages)}, with average of {sum(self.ages) / len(self.ages)}, 
+            incomes ranging from ${min(self.incomes)} to ${max(self .incomes)}, with average of ${sum(self.incomes) / len(self.incomes)},
+            gender distribution of {self.gender_distribution}% males and {100 - self.gender_distribution}% females,
+            common interests including {', '.join(self.interests[:-1])}, and {self.interests[-1]},
+            and locations including {', '.join(self.locations[:-1])}, and {self.locations[-1]}.
+            The total population size is {self.population_size}.
+            """.strip()
+
+        # Call the GPT-3.5 Turbo to generate the respondent
+        try:
+            response = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                ],
+            )
+        except Exception as e:
+            # Log the exception
+            print(f"An error occurred: {e}")
+            # Optionally, you can log additional details about the error, if available
+            if hasattr(e, 'response'):
+                print("Error details:", e.response.text)
+        # Append the generated description to the individuals list
+        bio = response.choices[0].message.content
+        return bio
 
 # Main function to test the Population class
 if __name__ == "__main__":
@@ -124,6 +166,8 @@ if __name__ == "__main__":
     # Instantiate the Population class with the defined parameters
     my_population = Population(ages, incomes, gender_distribution, interests, locations, 5)
     # Retrieve the generated population
+    my_population_description = my_population.get_population_description()
+    print(my_population_description)
     individuals = my_population.get_population()
     # Print the first few individuals to check
     for individual in individuals[:5]:  # Print the first five individuals
