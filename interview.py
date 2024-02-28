@@ -67,7 +67,11 @@ class InterviewV2:
         self.population = survey.target_audience
         self.answers = {question: {user: "" for user in survey.target_audience.get_population()} for question in survey.get_questions()}
     def interview_user(self, individual):
+        memory = []  # This will store past Q&A pairs
         for question in self.survey.survey_questions:
+            # Convert past Q&As into a format that can be included in the prompt
+            past_interactions = "\n\n".join(memory)
+
             model = "gpt-3.5-turbo" if not self.survey.assets else "gpt-4-vision-preview"
             system_prompt = f"""
             We are conducting an interview with a participant for a focus group survey. We will ask 
@@ -78,8 +82,8 @@ class InterviewV2:
             ```
             {individual}
             ```
-            The individual is show the ad campaign or product and asked to give their opinion, 
-            this might include images that should be looked very closelly. We will take 
+            The individual is shown the ad campaign or product and asked to give their opinion, 
+            this might include images that should be looked very closely. We will take 
             into consideration this information very seriously, and will always give genuine feedback.
             {{
                 "ad_campaign": "{self.survey.campaign_description}",
@@ -89,10 +93,13 @@ class InterviewV2:
             Interviewer: "Hello, nice to meet you! Thank you for participating in our survey.
             We will now begin the interview."
             Respondent: "Hello, thank you for having me."
-            Interviewer: "My pleasure. Please respond, with your true thoughts, dont hesitate to be honest.
-            your opinion is very important to us."
-            Respondent: "Of course, I will be honest, and give short and honest feedback with my opinion based who I am."
-            Interviewer: "Great! Let's start with the first question."
+            Interviewer: "My pleasure. Please respond, with your true thoughts, don't hesitate to be honest.
+            Your opinion is very important to us."
+            Respondent: "Of course, I will be honest, and give short and honest feedback based on who I am."
+            Interviewer: "Great! Let's start with the questions."
+            
+            {past_interactions}  
+
             Interviewer: "{question}"
             Respondent: "
             """
@@ -102,13 +109,15 @@ class InterviewV2:
                     for asset in self.survey.assets:
                         content.append({
                             "type": "image_url",
-                            "image_url": f"data:image/jpeg;base64,{self.survey.asset}"
+                            "image_url": f"data:image/jpeg;base64,{asset}"  # Ensure this is correct; it might be asset.image_url or similar
                         })
                 messages = [{"role": "system", "content": content}]
                 response = client.chat.completions.create(model=model, messages=messages, max_tokens=1000)
                 print(f"Question: {question}")
                 print(f"Response: {response.choices[0].message.content}")
                 self.answers[question][individual] = response.choices[0].message.content
+                # Add the current Q&A pair to memory for use in future questions
+                memory.append(f"Interviewer: {question}\nRespondent: {response.choices[0].message.content.strip()}")  
             except Exception as e:
                 # Log the exception
                 print(f"An error occurred: {e}")
