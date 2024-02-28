@@ -155,6 +155,13 @@ class Population:
         # Append the generated description to the individuals list
         bio = response.choices[0].message.content
         return bio
+    def save_population(self):
+        # Save a dictionary with the info
+        population = {
+            "ages": self.ages,
+            "incomes": self.incomes,
+            
+            
 
 # Main function to test the Population class
 if __name__ == "__main__":

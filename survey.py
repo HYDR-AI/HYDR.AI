@@ -1,5 +1,6 @@
 import base64
 from dotenv import load_dotenv
+
 load_dotenv()
 import openai
 client = openai.Client()
@@ -89,12 +90,23 @@ class Survey:
             list: The list of survey questions.
         """
         return self.survey_questions
+    def save_survey(self):
+        # Save a dictionary with the info
+        survey = {
+            "assets": self.assets,
+            "campaign_description": self.campaign_description,
+            "campaign_intent": self.campaign_intent,
+            "target_audience": self.target_audience,
+            "survey_questions": self.survey_questions,
+            "survey_responses": self.survey_responses
+        }
+        return survey
 # Main function to test the Survey class
 if __name__ == "__main__":
 
     # Define assets (images)
     assets = [
-        encode_image("assets/valor.jpg")
+        # encode_image("assets/valor.jpg")
     ]
     
     # Define campaign description, intent, and target audience
