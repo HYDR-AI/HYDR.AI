@@ -96,10 +96,14 @@ class Population:
                 ],
             )
         except Exception as e:
+            # Log the exception
             print(f"An error occurred: {e}")
-            return None
+            # Optionally, you can log additional details about the error, if available
+            if hasattr(e, 'response'):
+                print("Error details:", e.response.text)
         # Append the generated description to the individuals list
-        self.individuals.append(response.choices[0].message.content)
+        bio = response.choices[0].message.content
+        return bio
 
     def get_population(self):
         """
