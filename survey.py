@@ -23,7 +23,7 @@ class Survey:
         survey_responses (list): List of strings describing the survey responses.
     """
     
-    def __init__(self, assets, campaign_description, target_audience:Population, campaign_intent=None, survey_questions=[], number_questions=10):
+    def __init__(self, assets, campaign_description, target_audience:Population, campaign_intent=None, survey_questions=[], number_questions=3):
         """
         Constructs all the necessary attributes for the survey object.
         

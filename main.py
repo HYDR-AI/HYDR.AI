@@ -1,8 +1,14 @@
+import numpy as np
 import streamlit as st
 from interview import InterviewV2
 from population import Population
 from assets.homepage import homepage_html
 from survey import Survey
+from analysis import analyze_results, compute_word_relevance, embedding_api, top_words
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+from analysis import analyze_results, compute_word_relevance
 
 # Constants for easier maintenance and updates
 HOME = "Home"
@@ -60,11 +66,11 @@ def intro():
         [2.6, 1, 2]
     )  # Adjust the ratio as needed for better centering
     with col2:  # This puts the button in the center column
-        st.write('<br style="line-height: 6;">', unsafe_allow_html=True)
+        st.write('<br style="line-height: 6;"><br><br>', unsafe_allow_html=True)
         if st.button("Input Form"):
             st.session_state["current_page"] = INPUT_FORM
             st.session_state["page_history"].append(INPUT_FORM)
-            st.experimental_rerun()
+            st.rerun()
 
 
 def input_form():
@@ -76,7 +82,7 @@ def input_form():
 
     with cols[1]:
         st.header("Product")
-        campaign_description = st.text_area("Enter campaign description", height=150, value="Chocolates Valor presenta su gama de productos y sabores que van desde lo más tradicional a lo más innovador. Placer en estado puro")
+        campaign_description = st.text_area("Enter campaign description", height=150, value="Chocolates Valor presents its range of products and flavors that range from the most traditional to the most innovative. Pure pleasure")
         campaign_intent = st.text_area("Enter campaign intent", height=80, value="We want to evoke a premium and traditional feeling in the user")
         images_content_videos = st.file_uploader(
             "Imágenes, contenido, videos",
@@ -124,8 +130,7 @@ def input_form():
                         attachments,
                         campaign_description,
                         my_population,
-                        campaign_intent,
-                        number_questions=1
+                        campaign_intent
                     )
                     # Print survey questions
                     print("Survey Questions:")
@@ -149,30 +154,67 @@ def input_form():
             st.rerun()
 
 
+
 def output_results():
     """The results/output page function."""
-    cols = st.columns([1, 9])  # Adjust the ratio as needed
-    with cols[0]:
-        if st.button("Go Back", key="go_back_output"):
-            go_back()
+    st.title("Analytics Output")
+    st.markdown("---")
 
-    with cols[1]:  # Main content starts here
-        st.title("Analytics Output")
-        # Check if interview results are available and display them
-        if "interview_results" in st.session_state:
-            interview_results = st.session_state["interview_results"]
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                st.header("Survey Responses")
-                st.write(interview_results)  # Assuming interview_results is in a displayable format
-            with col2:
-                st.header("Sentiment")
-                # Display sentiment analysis results here, if applicable
-            with col3:
-                st.header("Risk")
-                # Display risk assessment results here, if applicable
-        else:
-            st.write("No interview results to display.")
+    if "interview_results" in st.session_state:
+        interview_results = st.session_state["interview_results"]
+        print(f"[DEBUG] interview_results: {interview_results}")
+
+        with st.spinner("Analyzing results..."):
+            insights = analyze_results(interview_results)
+            # print(f"[DEBUG] INSIGHTS: {insights}")
+        
+        # Create two columns for the layout
+        col1, col2 = st.columns([2, 3])  # Adjust the ratio as per your content size
+
+        with col1:
+            st.subheader("Questions insights")
+            for insight in insights:
+                for question_id, detail in insight.items():
+                    with st.expander(f"Insight for Question {question_id.split('_')[-1]}"):
+                        st.markdown("**Top Topics:** " + ', '.join(detail["topics"]))
+                        st.markdown("**Positive Feedback:** " + ', '.join(detail["good"]))
+                        st.markdown("**Areas for Improvement:** " + ', '.join(detail["bad"]))
+        
+        with col2:
+            with st.spinner("Getting top words of the interview..."):
+                topic = [value["topics"] for question in insights for key, value in question.items()]
+                words = top_words(str(topic), 5)
+            
+            word_embedding = {}
+            for word in words:
+                word_embedding[word] = embedding_api(word)
+            
+            questions_embeding = [value["embeddings"] for question in insights for key, value in question.items()]
+            relevance = []
+            for key, value in word_embedding.items():
+                word_em = np.array(value).flatten()
+                sum_relevance = 0
+                for question in questions_embeding:
+                    question = np.array(question).flatten()
+                    sum_relevance += np.dot(question, word_em) / (np.linalg.norm(question) * np.linalg.norm(word_em))
+                relevance.append(sum_relevance)
+            
+            df = pd.DataFrame({'Words': words, 'Relevance': relevance})
+            df = df.sort_values(by='Relevance', ascending=False)
+
+            # Visualization with seaborn on the right column
+            st.subheader("Relevance of Words in the Survey Responses")
+            fig, ax = plt.subplots(figsize=(8, 5))
+            sns.barplot(x='Relevance', y='Words', data=df, palette='viridis', ax=ax)
+            plt.title('Relevance of Words')
+            ax.set_facecolor('white')  # Set the background color to white
+            sns.despine(left=True, bottom=True)  # Remove the axes spines
+            plt.grid(axis='x', color='gray', linestyle='--', linewidth=0.5, alpha=0.5)  # Add a light grid for readability
+            plt.tight_layout()
+            st.pyplot(fig, transparent=True)  # Set transparent=True to remove the background
+
+    else:
+        st.write("No interview results to display.")
 
 # Mapping of page names to their corresponding functions for easier navigation handling
 page_names_to_funcs = {
