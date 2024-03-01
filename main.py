@@ -1,3 +1,5 @@
+import math
+import time
 import numpy as np
 import streamlit as st
 from interview import InterviewV2
@@ -9,7 +11,7 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from analysis import analyze_results, compute_word_relevance
-
+import plotly.graph_objects as go
 # Constants for easier maintenance and updates
 HOME = "Home"
 INPUT_FORM = "Input Form"
@@ -140,12 +142,12 @@ def input_form():
                 except Exception as e:
                     st.error(f"Failed to create survey questions: {str(e)}")
             with st.spinner("Please wait... Conducting interview"):
-                try:
-                    print("Conducting interview")
-                    interview = InterviewV2(survey)
-                    interview.mass_interview()
-                except Exception as e:
-                    st.error(f"Failed to complete the interview: {str(e)}")
+                # try:
+                print("Conducting interview")
+                interview = InterviewV2(survey)
+                interview.mass_interview() 
+                # except Exception as e:
+                    # st.error(f"Failed to complete the interview: {str(e)}")
 
             st.session_state["interview_results"] = interview.get_results()
             
@@ -167,6 +169,7 @@ def output_results():
 
         with st.spinner("Analyzing results..."):
             insights = analyze_results(interview_results)
+            st.balloons()
             # print(f"[DEBUG] INSIGHTS: {insights}")
         
         # Create two columns for the layout
@@ -203,16 +206,39 @@ def output_results():
             df = pd.DataFrame({'Words': words, 'Relevance': relevance})
             df = df.sort_values(by='Relevance', ascending=False)
 
-            # Visualization with seaborn on the right column
-            st.subheader("Relevance of Words in the Survey Responses")
-            fig, ax = plt.subplots(figsize=(8, 5))
-            sns.barplot(x='Relevance', y='Words', data=df, palette='viridis', ax=ax)
-            plt.title('Relevance of Words')
-            ax.set_facecolor('white')  # Set the background color to white
-            sns.despine(left=True, bottom=True)  # Remove the axes spines
-            plt.grid(axis='x', color='gray', linestyle='--', linewidth=0.5, alpha=0.5)  # Add a light grid for readability
-            plt.tight_layout()
-            st.pyplot(fig, transparent=True)  # Set transparent=True to remove the background
+            fig = go.Figure()
+            categories = df['Words']
+            r_values = df['Relevance'].tolist() + [df['Relevance'].iloc[0]]
+            theta_values = categories + [categories[0]]
+            fig.add_trace(go.Scatterpolar(
+                r=r_values,
+                theta=theta_values,
+                line_color='rgb(202, 231, 22)',
+                fillcolor='rgba(239, 247, 188,0.5)',
+                fill='toself',
+                line=dict(width=2, color='rgb(202, 231, 22)'),
+    
+                name='Top Words'
+            ))
+            fig.update_layout(
+            polar=dict(
+                radialaxis=dict(
+                visible=True,
+                range=[0, math.ceil(df['Relevance'].max())]
+                )),
+            showlegend=False
+            )
+            st.plotly_chart(fig, use_container_width=True)
+            # Convert the structure to a DataFrame
+        data = []
+        for question, responses in st.session_state["interview_results"].items():
+            for individual, response in responses.items():
+                data.append([question, individual, response])
+
+        # Create DataFrame
+        df_all = pd.DataFrame(data, columns=['Question', 'Individual', 'Response'])
+        st.dataframe(df_all)
+        
 
     else:
         st.write("No interview results to display.")
