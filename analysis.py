@@ -55,8 +55,8 @@ def analyze_results(results):
     i = 0
     for key, value in results.items():
         api_text = ""
+        i += 1
         for respondent, response in value.items():
-            i += 1
             api_text += f"Response {i}: {response} \n"
 
         insights.append(

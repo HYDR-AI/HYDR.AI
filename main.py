@@ -16,6 +16,7 @@ import plotly.graph_objects as go
 HOME = "Home"
 INPUT_FORM = "Input Form"
 OUTPUT_RESULTS = "Output Results"
+APPLE_DEMO = "Apple Demo"
 
 # Set up the page
 st.set_page_config(page_title="HYDR.AI", layout="wide", page_icon="assets/logo.png")
@@ -69,12 +70,14 @@ def intro():
     )  # Adjust the ratio as needed for better centering
     with col2:  # This puts the button in the center column
         st.write('<br style="line-height: 6;"><br><br>', unsafe_allow_html=True)
-        if st.button("Input Form"):
+        if st.button("New Study"):
             st.session_state["current_page"] = INPUT_FORM
             st.session_state["page_history"].append(INPUT_FORM)
             st.rerun()
-
-
+        if st.button("Demo Apple"):
+            st.session_state["current_page"] = APPLE_DEMO
+            st.session_state["page_history"].append(APPLE_DEMO)
+            st.rerun()
 
 def input_form():
     """The input form page function."""
@@ -238,16 +241,115 @@ def output_results():
         # Create DataFrame
         df_all = pd.DataFrame(data, columns=['Question', 'Individual', 'Response'])
         st.dataframe(df_all)
-        
-
     else:
         st.write("No interview results to display.")
+
+def apple_output_results():
+    """The results/output page function."""
+    st.title("Analytics Output")
+    st.markdown("---")
+
+    # Load from results from file
+    with open("results.txt", "r") as file:
+        interview_results = file.read()
+    interview_results = eval(interview_results)
+    
+    print(f"[DEBUG] interview_results: {interview_results}")
+
+    with st.spinner("Analyzing results..."):
+        insights = analyze_results(interview_results)
+        st.balloons()
+        # print(f"[DEBUG] INSIGHTS: {insights}")
+    
+    # Create two columns for the layout
+    col1, col2 = st.columns([2, 3])  # Adjust the ratio as per your content size
+
+    with col1:
+        st.subheader("Questions insights")
+        max_height_style = """
+            <style>
+                .scrollable-container {
+                    overflow-y: auto;
+                    max-height: 500px; /* Adjust the max-height as needed */
+                }
+            </style>
+            """
+
+        # Inject custom CSS with the above style
+        st.markdown(max_height_style, unsafe_allow_html=True)
+
+        # Wrap the content you want to be scrollable inside a div with the scrollable-div class
+        
+        for insight in insights:
+            for question_id, detail in insight.items():
+                with st.expander(f"Insight for Question {question_id.split('_')[-1]}"):
+                    st.markdown("**Top Topics:** " + ', '.join(detail["topics"]))
+                    st.markdown("**Positive Feedback:** " + ', '.join(detail["good"]))
+                    st.markdown("**Areas for Improvement:** " + ', '.join(detail["bad"]))
+        
+       
+    with col2:
+        with st.spinner("Getting top words of the interview..."):
+            topic = [value["topics"] for question in insights for key, value in question.items()]
+            words = top_words(str(topic), 5)
+        
+        word_embedding = {}
+        for word in words:
+            word_embedding[word] = embedding_api(word)
+        
+        questions_embeding = [value["embeddings"] for question in insights for key, value in question.items()]
+        relevance = []
+        for key, value in word_embedding.items():
+            word_em = np.array(value).flatten()
+            sum_relevance = 0
+            for question in questions_embeding:
+                question = np.array(question).flatten()
+                sum_relevance += np.dot(question, word_em) / (np.linalg.norm(question) * np.linalg.norm(word_em))
+            relevance.append(sum_relevance)
+        
+        df = pd.DataFrame({'Words': words, 'Relevance': relevance})
+        df = df.sort_values(by='Relevance', ascending=False)
+
+        fig = go.Figure()
+        categories = df['Words']
+        r_values = df['Relevance'].tolist() + [df['Relevance'].iloc[0]]
+        theta_values = categories + [categories[0]]
+        fig.add_trace(go.Scatterpolar(
+            r=r_values,
+            theta=theta_values,
+            line_color='rgb(202, 231, 22)',
+            fillcolor='rgba(239, 247, 188,0.5)',
+            fill='toself',
+            line=dict(width=2, color='rgb(202, 231, 22)'),
+
+            name='Top Words'
+        ))
+        fig.update_layout(
+        polar=dict(
+            radialaxis=dict(
+            visible=True,
+            range=[0, math.ceil(df['Relevance'].max())]
+            )),
+        showlegend=False
+        )
+        st.plotly_chart(fig, use_container_width=True)
+        # Convert the structure to a DataFrame
+    data = []
+    for question, responses in interview_results.items():
+        for individual, response in responses.items():
+            data.append([question, individual, response])
+
+    # Create DataFrame
+    df_all = pd.DataFrame(data, columns=['Question', 'Individual', 'Response'])
+    st.dataframe(df_all)
+
 
 # Mapping of page names to their corresponding functions for easier navigation handling
 page_names_to_funcs = {
     HOME: intro,
     INPUT_FORM: input_form,
     OUTPUT_RESULTS: output_results,
+    APPLE_DEMO: apple_output_results
 }
 
 # Execute the function associated with the current page
