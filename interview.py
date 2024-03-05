@@ -1,14 +1,12 @@
 import json
-
-# import random
-# import autogen
-# import requests
-
+import chromadb
+from chroma import MaisaChromaDB
 import openai
 from population import Population
 
 from survey import Survey
 from dotenv import load_dotenv
+from multiprocessing import Pool
 
 load_dotenv()
 
@@ -72,8 +70,8 @@ class InterviewV2:
             question: {user: "" for user in survey.target_audience.get_population()}
             for question in survey.get_questions()
         }
-
     def interview_user(self, individual):
+        print(f"Interviewing {individual[5:]}")
         memory = []  # This will store past Q&A pairs
         for question in self.survey.survey_questions:
             # Convert past Q&As into a format that can be included in the prompt
@@ -126,13 +124,14 @@ class InterviewV2:
                 response = client.chat.completions.create(
                     model=model, messages=messages, max_tokens=1000
                 )
-                print(f"Question: {question}")
-                print(f"Response: {response.choices[0].message.content}")
+                # Print the first 5 characters of the question
+                print(f"Question: {question[:10]}... Response: {response.choices[0].message.content[:5]}...")
                 self.answers[question][individual] = response.choices[0].message.content
+
                 # Add the current Q&A pair to memory for use in future questions
-                memory.append(
-                    f"Interviewer: {question}\nRespondent: {response.choices[0].message.content.strip()}"
-                )
+                # memory.append(
+                #     f"Interviewer: {question}\nRespondent: {response.choices[0].message.content.strip()}"
+                # )
             except Exception as e:
                 # Log the exception
                 print(f"An error occurred: {e}")
@@ -141,8 +140,11 @@ class InterviewV2:
                     print("Error details:", e.response.text)
 
     def mass_interview(self):
+        # Get the population
+        population = self.population.get_population()
         for individual in self.population.get_population():
             self.interview_user(individual)
+        print("All interviews have been conducted.")
 
     def get_results(self):
         return self.answers
