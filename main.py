@@ -179,6 +179,7 @@ def output_results():
             st.subheader("Questions insights")
             for insight in insights:
                 for question_id, detail in insight.items():
+                    print(f"[DEBUG] question_id: {question_id}")
                     with st.expander(f"Insight for Question {question_id.split('_')[-1]}"):
                         st.markdown("**Top Topics:** " + ', '.join(detail["topics"]))
                         st.markdown("**Positive Feedback:** " + ', '.join(detail["good"]))
